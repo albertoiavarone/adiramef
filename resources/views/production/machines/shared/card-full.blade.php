@@ -19,8 +19,8 @@
         <div class="row">
             <div class="col-md-4">
                 <img src="{{ asset( !is_null($machine->type->logo_path) ? 'storage/'.$machine->type->logo_path : 'assets/media/img/no_image.png') }}"  style="max-height:60px">
-                @if($machine->gps)
-                <img class="mt-4" src="{{ asset( !is_null($machine->provider->logo_path) ? 'storage/'.$machine->provider->logo_path : '') }}"  style="max-height:50px">
+                @if($machine->gps && data_get($machine, 'provider.logo_path' ))
+                <img class="mt-4" src="{{ asset( !is_null(data_get($machine, 'provider.logo_path' )) ? 'storage/'.$machine->provider->logo_path : '') }}"  style="max-height:50px">
                 @endif
             </div>
             <div class="col-md-8">
