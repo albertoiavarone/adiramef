@@ -8,7 +8,8 @@
             <div class="card-body">
                 @if($last_work)
                     <p class="float-left">
-                        <strong>{{ trans_choice('general.order',1)}}:</strong>&nbsp;{{ data_get($last_work, 'order.code')}}
+                        <strong>{{ trans_choice('production.program',1)}}:</strong>&nbsp;{{ data_get($last_work, 'program.name')}}
+                        <br><strong>{{ trans_choice('general.order',1)}}:</strong>&nbsp;{{ data_get($last_work, 'order.code')}}
                         <br><strong>{{ __('production.date_start')}}:</strong>&nbsp;{{ $last_work['date_start'] ? formatDateTime($last_work['date_start']) : 'n.d.' }}
                     </p>
                     <a class="btn btn-sm btn-outline-secondary float-right" href="#"

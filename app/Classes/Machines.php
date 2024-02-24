@@ -6,6 +6,7 @@ use App\Models\Production\MachineInfo;
 use App\Models\Production\MachineData;
 use App\Models\Production\MachineSync;
 use App\Models\Production\MachineLog;
+use App\Models\Production\Program;
 use App\Models\Production\Work;
 use App\Models\Commercial\Order;
 use App\Classes\Sync;
@@ -113,18 +114,15 @@ class Machines{
         if(!$machine->gps){
             return $this->syncFixedMachine($machine->uuid);
         }
+        $response = [];
+
         //==========================================================
         $className = 'App\\Classes\\Providers\\' . $machine->provider->class_name;
         $Provider =  new $className($machine->provider);
-
-
-
         //telemetria veicolo
         $row = $machine->last_position();
         if( !$row || $row->created_at <= Carbon::now()->subMinute($this->telemetryRefreshTimeMinutes) ) {
-
             $last_telemetry = $Provider->getLastTelemetry($machine);
-
             if(!empty($last_telemetry['telemetry'])){
               $inserted_record__telemetry = $this->saveMachineTelemetry($machine, $last_telemetry['telemetry']);
               if($inserted_record__telemetry){
@@ -132,10 +130,10 @@ class Machines{
               }
               return $last_telemetry['request']['http_code'];
             }
-            return '503';    //custom error empty($last_telemetry['telemetry'])
+            return $response['code'] = '503';    //custom error empty($last_telemetry['telemetry'])
         }
         //
-      return '000';
+      return $response['code'] = '000';
 
     }
     /*
@@ -159,74 +157,80 @@ class Machines{
     */
     public function syncFixedMachine($uuid, $date_Ymd = ''){
 
-        //dd('Class Machine syncFixedMachine '.$uuid.'  -- '.$date_Ymd);
+      $machine = Machine::where('uuid',$uuid)->first();
+      $response = $this->sync->importData($machine);
 
-        $machine = Machine::where('uuid',$uuid)->first();
-        $function = strtolower($machine->options['sync_method_name']);
-        if(!$function) return false;
-        $response = $this->sync->$function($machine,$date_Ymd) ;
-        //dd($response);
-        $inserted_rows = 0;
-        $msg = '';
-        if($response['status']){
-            $data = $response['data'];
+      $inserted_rows = 0;
+      $msg = '';
+      if($response['status']){
+          $data = isset($response['data']) ? $response['data'] : [];
 
-                if(is_null($data['date_stop'])){
-                  return ;
-                }
-                 //====================================================================
-                 if(!is_null($data['order_code'])){
-                   $ref_date = null;
-                   if(isset($data['ref_date'])){
-                     $ref_date = $data['ref_date'];
-                   }
-                   $order = $this->Order->createOrder($data['order_code'],null, null, $machine, $ref_date);
-                   if($order->wasRecentlyCreated){
-                     $this->Order->linkOrderMachine($order,$machine);
-                   }
+           foreach($data as $key => $value){
+              if(is_null($value['date_stop'])) continue;
+
+               //====================================================================
+               $order = NULL;
+               if(!is_null($value['order_code'])){
+                 $order = $this->Order->createOrder($value['order_code'],$name=null, $description=null, $machine);
+                 if($order->wasRecentlyCreated){
+                   $this->Order->linkOrderMachine($order,$machine);
                  }
+               }
+               //====================================================================
+               if($value['program_name']){
+                 $machine_program = Program::UpdateOrCreate([
+                   'name' => $value['program_name'],
+                   'machine_id' => $machine->id,
+                 ],[
+                   'name' => $value['program_name'],
+                   'machine_id' => $machine->id,
+                   'ref_code' => isset($value['program_ref_code']) ? $value['program_ref_code'] : null,
+                   'description' => isset($value['info']['Programma']) ? $value['info']['Programma'] : null,
+                 ]);
+               }
+               //====================================================================
+               $work = Work::firstOrCreate(
+                       [
+                           'machine_id' => $machine->id,
+                           'program_id' => data_get($machine_program, 'id'),
+                           'date_start' => $value['date_start'],
+                       ],
+                       [
+                          'machine_id' => $machine->id,
+                          'program_id' => isset($machine_program) ? data_get($machine_program, 'id') : NULL,
+                          'order_id' => (isset($order->id) && !is_null($order->id)) ? $order->id : NULL,
+                          'date_start' => $value['date_start'],
+                          'date_stop' => $value['date_stop'],
+                          'total_time' => $value['total_time'] ? $value['total_time'] : NULL,
+                          'energy_consumed' => $value['energy_consumed'] ? $value['energy_consumed'] : NULL,
+                          'program_name' => $value['program_name'] ? $value['program_name'] : NULL,
+                          'description' => isset($value['description']) ? $value['description'] : NULL,
+                          'info' => $value['info'],
+                          'processes' => $value['processes'],
+                  ]);
+                  if ($work->wasRecentlyCreated) {
+                    if($value['order_code']){
+                                $msg.= ' - Lavorazione Ord. '.$value['order_code'].'<br />';
+                    }
+                    $inserted_rows++;
+                  }
+              //====================================================================
+           }
+      }
+      if($inserted_rows > 0){
+          MachineSync::create([
+              'type' => 'prod',
+              'machine_id' => $machine->id,
+              'ref_date' => \Carbon\Carbon::parse($date_Ymd)->format('Y-m-d'),
+              'status' => $response['status'],
+              'inserted_rows' => $inserted_rows,
+              'message' => $response['message'].($msg ? "\n".$msg : ''),
+          ]);
+      }
 
-                 //----Program---------------------------
-                 $program = $this->Program->createProgram($data['program_name'], $machine, $data['program_id']);
-                 //====================================================================
-                 $work = Work::firstOrCreate(
-                         [
-                             'machine_id' => $machine->id,
-                             'date_start' => $data['date_start'],
-                             'date_stop' => $data['date_stop'],
-                         ],
-                         [
-                            'machine_id' => $machine->id,
-                            'order_id' => (isset($order->id) && !is_null($order->id)) ? $order->id : NULL,
-                            'date_start' => $data['date_start'],
-                            'date_stop' => $data['date_stop'],
-                            'total_time' => $data['total_time'] ? $data['total_time'] : NULL,
-                            'energy_consumed' => $data['energy_consumed'] ? $data['energy_consumed'] : NULL,
-                            'program_id' => $program->id,
-                            'program_name' => $program->name,
-                            'description' => $data['description'] ? $data['description'] : NULL,
-                            'info' => $data['info'],
-                            'processes' => $data['processes'],
-                    ]);
-                if ($work->wasRecentlyCreated) {
-                      $msg.= ' - Lavorazione '.$data['order_code'].'<br />';
-                      $inserted_rows++;
+      $response['code'] = '000';
 
-                }
-                //====================================================================
-
-        }
-        if($inserted_rows > 0){
-            MachineSync::create([
-                'type' => 'prod',
-                'machine_id' => $machine->id,
-                'ref_date' => \Carbon\Carbon::parse($date_Ymd)->format('Y-m-d'),
-                'status' => $response['status'],
-                'inserted_rows' => $inserted_rows,
-                'message' => $response['message'].'<br />'.$msg,
-            ]);
-        }
-        return $response;
+      return $response;
     }
     /*
     * get positions

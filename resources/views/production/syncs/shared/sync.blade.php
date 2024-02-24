@@ -41,7 +41,7 @@
 		<!--end::Content-->
 		<!--begin::Text-->
 		<span class="d-block font-weight-bold mb-4">{{trans_choice('general.message',1)}}</span>
-		<p class="mb-7 mt-3 ">{!! $sync->message !!}</p>
+		<p class="mb-7 mt-3 ">{!! nl2br($sync->message) !!}</p>
 		<!--end::Text-->
 	</div>
 	<!--end::Body-->

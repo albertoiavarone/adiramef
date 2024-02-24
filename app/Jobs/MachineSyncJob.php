@@ -38,7 +38,7 @@ class MachineSyncJob implements ShouldQueue
         $data = $this->data;
         echo 'Queued machine: '.$data->builder->name.' - '.$data->name.' - '.$data->serial_number."\n";
         $response = $Machine->syncMachine($data);
-        echo 'response status: '.$response."\n";
+        echo 'response status: '.$response['code']."\n";
         return 0;
     }
 }
