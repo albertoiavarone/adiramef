@@ -25,7 +25,7 @@ class Zucchetti{
   */
   public function importData($machine, $date_Ymd)
   {
-    //dump('Sync zucchetti '.$machine->name.' S/N '.$machine->serial_number) ;
+    dump('Sync zucchetti '.$machine->name.' S/N '.$machine->serial_number.' '.$date_Ymd) ;
     /*
       0 => "LNK_DOC"
       1 => "ID"
@@ -61,7 +61,6 @@ class Zucchetti{
        //return strpos(basename($value), $date);
        return str_starts_with(basename($value), $date);
     });
-
 
 
     if( empty($files)){

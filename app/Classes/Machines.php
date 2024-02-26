@@ -27,6 +27,7 @@ class Machines{
         $this->syncMachineLogs = new MachineLogs();
         $this->infoRefreshTimeMinutes = config('values.MACHINE_INFO_REFRESH_TIME_MINUTES');
         $this->telemetryRefreshTimeMinutes = config('values.MACHINE_TELEMETRY_REFRESH_TIME_MINUTES');
+        $this->start_date_import = '20240220';
     }
     /*
     *
@@ -112,7 +113,7 @@ class Machines{
     public function syncMachine($machine, $date_start=null, $date_end=null){
         //======================impianti senza gps======================
         if(!$machine->gps){
-            return $this->syncFixedMachine($machine->uuid);
+            return $this->syncFixedMachine($machine->uuid, $date_start);
         }
         $response = [];
 
@@ -158,7 +159,7 @@ class Machines{
     public function syncFixedMachine($uuid, $date_Ymd = ''){
 
       $machine = Machine::where('uuid',$uuid)->first();
-      $response = $this->sync->importData($machine);
+      $response = $this->sync->importData($machine, $date_Ymd);
 
       $inserted_rows = 0;
       $msg = '';
@@ -287,6 +288,32 @@ public function getStatus($machine){
     $status = $classMachine->currentState($machine);
     return $status;
   }
+/*
+*
+*
+*/
+/*
+* init sync
+*/
+public function init_sync($machine){
+    $today = date('Ymd');
+    $start_date = $this->start_date_import;
+    if($machine->last_sync()){
+        $start_date = $machine->last_sync()->ref_date;
+    }
+    $i = 0;
+    while($today > $start_date){
+        dump($today.' ? '. $start_date);
+        $resp = $this->syncMachine($machine, date('Ymd', strtotime($start_date)));
+        dump('sync '.$start_date, $resp);
+        $start_date = date('Ymd', strtotime($start_date. ' + 1 days'));
+        $i++;
+        if($i>500) break;
+    }
+
+    return;
+
+}
 /*
 *
 *
