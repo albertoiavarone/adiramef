@@ -45,12 +45,14 @@ class TestController extends Controller
     }
 
     public function test(){
-
+	/*
       $machines = Machine::all();
       foreach($machines as $machine){
         dump($machine->name);
         $this->machine->init_sync($machine);
       }
+	 */
+	  dd('stooooooop');
     }
 
     public function test_post(Request $request){

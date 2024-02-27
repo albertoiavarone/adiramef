@@ -27,7 +27,7 @@ class Machines{
         $this->syncMachineLogs = new MachineLogs();
         $this->infoRefreshTimeMinutes = config('values.MACHINE_INFO_REFRESH_TIME_MINUTES');
         $this->telemetryRefreshTimeMinutes = config('values.MACHINE_TELEMETRY_REFRESH_TIME_MINUTES');
-        $this->start_date_import = '20240220';
+        $this->start_date_import = '20240210';
     }
     /*
     *

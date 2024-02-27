@@ -25,7 +25,7 @@ class Zucchetti{
   */
   public function importData($machine, $date_Ymd)
   {
-    dump('Sync zucchetti '.$machine->name.' S/N '.$machine->serial_number.' '.$date_Ymd) ;
+    //dump('Sync zucchetti '.$machine->name.' S/N '.$machine->serial_number.' '.$date_Ymd) ;
     /*
       0 => "LNK_DOC"
       1 => "ID"
@@ -82,7 +82,7 @@ class Zucchetti{
           while (($row = fgetcsv($handle, 1000, $separator)) !== FALSE) {
 
               $line++;
-              if($row[4] != $machine->serial_number) {
+              if(!isset($row[4]) || $row[4] != $machine->serial_number) {
                 continue;
               }
 
