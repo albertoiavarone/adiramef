@@ -25,8 +25,7 @@
                               <th>{{ trans_choice('production.machine',1)}}</th>
                               <th>{{ trans_choice('production.machine_type',1)}}</th>
                               <th>{{trans_choice('general.order',1)}}</th>
-                              <th>{{trans_choice('production.piece',2)}}</th>
-                              <th>{{ __('production.prd_label')}}</th>
+                              <th>{{trans_choice('production.process',2)}}</th>
                               <th class="no-sort"></th>
                           </tr>
                           </thead>
