@@ -120,7 +120,7 @@ class WorkController extends Controller
                     return $q->where('uuid',$request->machine_uuid);
                 });
             }
-			
+
 			if ($request->has('code') and $request->code) {
                 $query->whereHas('order', function($q) use ($request){
                     return $q->where('ref_code', 'LIKE', '%'.$request->code.'%');
@@ -203,7 +203,7 @@ class WorkController extends Controller
                 $nestedData['created_at'] = convertToLocal($work->updated_at);
                 $nestedData['machine'] = view('production.machines.shared.name',['machine'=>$work->machine])->render();
                 $nestedData['type'] = $work->machine->type->name;
-                $nestedData['order'] = $work->order->ref_code.' '.$work->order->name;
+                $nestedData['order'] = data_get($work, 'order.ref_code').' '.data_get($work, 'order.name');
                 $nestedData['processes'] = $work->processes;
                 $nestedData['bales'] =  view('production.erp.status',['work'=>$work])->render();
                 $nestedData['buttons'] = view('production.works.tds.buttons',['work'=>$work])->render();
@@ -233,7 +233,7 @@ class WorkController extends Controller
         $work = Work::where('uuid',$request->uuid)->firstOrFail();
         return view('production.works.shared.work', compact('work'));
     }
-    
+
 	/**
      * Remove the specified resource from storage.
      *
