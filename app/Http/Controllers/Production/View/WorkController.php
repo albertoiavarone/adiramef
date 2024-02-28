@@ -34,7 +34,6 @@ class WorkController extends Controller
             $columnConfig[] = ['data' => 'type', 'orderable'=>false,'searchable'=>true];
             $columnConfig[] = ['data' => 'order', 'orderable'=>false,'searchable'=>true];
             $columnConfig[] = ['data' => 'processes', 'orderable'=>true];
-            $columnConfig[] = ['data' => 'bales', 'orderable'=>false];
             $columnConfig[] = ['data' => 'buttons', 'orderable'=>false];
 
             $machines = Machine::orderBy('name')->get();
@@ -112,7 +111,7 @@ class WorkController extends Controller
                 'machine_uuid' => 'nullable|uuid',
                 'date_from' => 'nullable|date_format:d/m/Y',
                 'date_to' => 'nullable|date_format:d/m/Y',
-				'code' => 'nullable|string',
+				        'code' => 'nullable|string',
 
             ]);
             if ($request->has('machine_uuid') and $request->machine_uuid) {
@@ -154,8 +153,7 @@ class WorkController extends Controller
                             2 => 'type',
                             3 => 'order',
                             4 => 'processes',
-                            5 => 'bales',
-                            6 => 'buttons',
+                            5 => 'buttons',
                         );
 
         $totalData = $query->count();
@@ -205,7 +203,6 @@ class WorkController extends Controller
                 $nestedData['type'] = $work->machine->type->name;
                 $nestedData['order'] = data_get($work, 'order.ref_code').' '.data_get($work, 'order.name');
                 $nestedData['processes'] = $work->processes;
-                $nestedData['bales'] =  view('production.erp.status',['work'=>$work])->render();
                 $nestedData['buttons'] = view('production.works.tds.buttons',['work'=>$work])->render();
                 $data[] = $nestedData;
 
